@@ -1,0 +1,30 @@
+{
+  "concurrent_pairs": 100,
+  "single_winner_pairs": 100,
+  "naive_refund_recorded_rho": 0.0,
+  "naive_refund_actual_rho": 0.3000000000000001,
+  "configured_rho_cap": 0.1,
+  "local_timings": {
+    "reserve": {
+      "median_ms": 0.1165,
+      "p95_ms": 0.210135
+    },
+    "sign_receipt": {
+      "median_ms": 0.0477,
+      "p95_ms": 0.0906
+    },
+    "submit_verify": {
+      "median_ms": 0.2241,
+      "p95_ms": 0.415125
+    },
+    "payload_verify": {
+      "median_ms": 0.0089,
+      "p95_ms": 0.060004999999999996
+    }
+  },
+  "median_receipt_bytes": 473,
+  "matched_runs": 20,
+  "maximum_aggregate_difference": 4.440892098500626e-16,
+  "identical_final_models": 20,
+  "events_per_training_run": 560
+}
