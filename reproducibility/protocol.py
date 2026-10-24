@@ -60,20 +60,23 @@ class Ledger:
         self.records.append(block);self.head=h
         return h
 
-    def open_round(self, t, parent, roster, sample_counts, coordinator_sig=None):
-        """Open a training round.  Fix 2: roster and per-client sample counts
-        are written to the ledger here so weights can be derived inside the
-        verifier.  Fix 5: coordinator_sig must verify against COORDINATOR_KEY.
+    def open_round(self, t, parent, roster, sample_counts, coordinator_sig):
+        """Open a training round.  roster and per-client sample counts are
+        written to the ledger so weights can be derived inside the verifier.
+        coordinator_sig is MANDATORY (no default None) and must verify against COORDINATOR_KEY.
         """
-        t = int(t)  # Fix 4: coerce to int
+        t = int(t)
         with self.lock:
             if t in self.round_parent: raise ValueError('round_already_open')
-            # Fix 5: require coordinator signature over canonical round metadata
+            if coordinator_sig is None:
+                raise ValueError('missing_coordinator_sig')
             payload = canonical({'round': t, 'parent': parent,
                                  'roster': list(roster),
                                  'sample_counts': {c: int(n) for c, n in sample_counts.items()}})
-            if coordinator_sig is not None:
+            try:
                 COORDINATOR_KEY.public_key().verify(coordinator_sig, payload)
+            except (InvalidSignature, ValueError) as exc:
+                raise ValueError('invalid_coordinator_sig') from exc
             self.round_parent[t] = parent
             self.round_roster[t] = list(roster)
             self.round_sample_n[t] = {c: int(n) for c, n in sample_counts.items()}
@@ -81,15 +84,14 @@ class Ledger:
                           'roster': list(roster),
                           'sample_counts': self.round_sample_n[t]})
 
-    def reserve(self, client, t, parent, cost, client_sig=None):
-        """Reserve budget for one round.  Fix 4: validate argument types and
-        atomically append before updating spent (roll back on exception).
-        Fix 5: optional client_sig verifies the reservation request.
+    def reserve(self, client, t, parent, cost, client_sig):
+        """Reserve budget for one round.  Validates argument types and atomically
+        appends before updating spent (roll back on exception).
+        client_sig is MANDATORY (no default None) and verifies the reservation request.
         """
-        t = int(t)  # Fix 4: coerce np.int64 etc.
+        t = int(t)
         with self.lock:
             self.reason=None
-            # Fix 4: type validation
             if not isinstance(cost, int) or cost <= 0:
                 self.reason = 'invalid_cost'; return None
             key=(client, t)
@@ -97,20 +99,20 @@ class Ledger:
                 self.reason='revoked'; return None
             if self.round_parent.get(t)!=parent:
                 self.reason='stale_parent'; return None
+            if client_sig is None:
+                self.reason = 'signature'; return None
+            req_payload = canonical({'client': client, 'round': t,
+                                     'parent': parent, 'cost': cost})
+            try:
+                self.client_keys[client].public_key().verify(client_sig, req_payload)
+            except (InvalidSignature, ValueError):
+                self.reason = 'signature'; return None
             if key in self.reservations:
                 self.reason='duplicate_reservation'; return None
             if cost!=self.expected_cost:
                 self.reason='policy_cost_mismatch'; return None
             if self.spent[client]+cost>self.budget[client]:
                 self.reason='budget_exhausted'; return None
-            # Fix 5: verify client signature on the reservation request
-            if client_sig is not None:
-                req_payload = canonical({'client': client, 'round': t,
-                                         'parent': parent, 'cost': cost})
-                try:
-                    self.client_keys[client].public_key().verify(client_sig, req_payload)
-                except (InvalidSignature, ValueError):
-                    self.reason = 'signature'; return None
             record={'client':client,'round':t,'parent_model':parent,'cost_units':cost,
                     'consent_epoch':self.epoch[client],'state':'reserved'}
             # Fix 4: append event BEFORE updating spent; roll back on exception
@@ -401,7 +403,7 @@ def attack_trials(n=1000):
     rows=[]
     attacks=['payload_tamper','receipt_replay','stale_model','forged_signature',
              'revoked_consent','budget_overspend','refund_laundering','aggregate_tamper',
-             'signed_poisoned_update']
+             'unsigned_calls','signed_poisoned_update']
     rng=np.random.default_rng(440)
 
     for attack in attacks:
@@ -457,6 +459,21 @@ def attack_trials(n=1000):
                 changed=expected.copy();changed.flat[rng.integers(changed.size)]+=.1
                 reject=not verify_aggregate([a1,a2,a3],w,changed)[0]
                 assert reject, "aggregate_tamper was not rejected"
+            elif attack=='unsigned_calls':
+                # 1. Test unsigned open_round fails
+                unsigned_open_failed = False
+                try:
+                    l.open_round(2, 'c'*64, ['A'], {'A': 100}, coordinator_sig=None)
+                except ValueError:
+                    unsigned_open_failed = True
+                assert unsigned_open_failed, "unsigned open_round should have raised ValueError"
+                # 2. Open round 2 properly with coordinator sig
+                csig_2 = _make_coordinator_sig(2, 'c'*64, ['A'], {'A': 100})
+                l.open_round(2, 'c'*64, ['A'], {'A': 100}, coordinator_sig=csig_2)
+                # 3. Test unsigned reserve fails with reason 'signature'
+                unsigned_res = l.reserve('A', 2, 'c'*64, 10_000_000_000, client_sig=None)
+                assert unsigned_res is None and l.reason == 'signature', f"expected 'signature' got {l.reason!r}"
+                reject = unsigned_open_failed and (unsigned_res is None)
             else:  # signed_poisoned_update — intentional negative control
                 a_poison=np.ones_like(a)*100;r_poison=l.receipt('A',0,a_poison)
                 reject=not(l.submit(r_poison) and l.receive(r_poison,a_poison))

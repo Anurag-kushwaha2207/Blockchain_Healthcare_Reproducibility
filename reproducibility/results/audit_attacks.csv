@@ -7,4 +7,5 @@ revoked_consent,1000,1000,1.0
 budget_overspend,1000,1000,1.0
 refund_laundering,1000,1000,1.0
 aggregate_tamper,1000,1000,1.0
+unsigned_calls,1000,1000,1.0
 signed_poisoned_update,1000,0,0.0
