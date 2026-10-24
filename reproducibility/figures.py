@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.patches import FancyBboxPatch, Rectangle, Circle, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch, Rectangle, FancyArrowPatch
 from matplotlib.ticker import FuncFormatter
 from experiment import rho_limit,epsilon_from_rho,ROUNDS,DELTA
 
@@ -71,6 +71,55 @@ def lifecycle():
     ax.text(.05,.27,'Fresh noise requires\nanother reservation.\nA cached replay is not\na new noisy release.',fontsize=8.4,color=NAVY,va='center')
     save(fig,'figure2_lifecycle')
 
+def _build_right_panel_from_ledger():
+    """Fix 6: generate the right panel of Figure 6 from real Ledger runs,
+    not from formulas.  We simulate 30 release attempts against a ρ cap of 0.10
+    using the actual Ledger reserve/refund mechanics.
+    """
+    from protocol import (Ledger, _make_coordinator_sig, _make_client_sig,
+                          fixture_key, SCALE)
+    SCALE_RHO = 10**12
+    cap_rho    = 0.10
+    cost_rho   = 0.01
+    cost_units = int(cost_rho * SCALE_RHO)
+    budget     = int(cap_rho * SCALE_RHO)
+
+    # --- Irreversible reservation (BAPFL behaviour) ---
+    irrev_ledger = Ledger(budget_units=budget, clients=('A',),
+                          expected_cost=cost_units)
+    irrev_cumulative = []
+    for attempt in range(30):
+        parent = ('a'*62 + f'{attempt:02d}')
+        roster = ['A']; counts = {'A': 100}
+        csig   = _make_coordinator_sig(attempt, parent, roster, counts)
+        rsig   = _make_client_sig('A', attempt, parent, cost_units)
+        irrev_ledger.open_round(attempt, parent, roster, counts, coordinator_sig=csig)
+        irrev_ledger.reserve('A', attempt, parent, cost_units, client_sig=rsig)
+        irrev_cumulative.append(irrev_ledger.spent['A'] / SCALE_RHO)
+
+    # --- Release-then-refund illustration (naive, wrong behaviour) ---
+    refund_ledger = Ledger(budget_units=budget, clients=('A',),
+                           expected_cost=cost_units)
+    refund_cumulative = []
+    refund_recorded   = []
+    actual_exposure   = 0.0
+    for attempt in range(30):
+        parent = ('b'*62 + f'{attempt:02d}')
+        roster = ['A']; counts = {'A': 100}
+        csig   = _make_coordinator_sig(attempt, parent, roster, counts)
+        rsig   = _make_client_sig('A', attempt, parent, cost_units)
+        refund_ledger.open_round(attempt, parent, roster, counts, coordinator_sig=csig)
+        result = refund_ledger.reserve('A', attempt, parent, cost_units, client_sig=rsig)
+        if result is not None:
+            actual_exposure += cost_rho       # a release actually occurred
+            # simulate the wrong "refund" by decrementing spent manually
+            refund_ledger.spent['A'] = max(0, refund_ledger.spent['A'] - cost_units)
+        refund_cumulative.append(actual_exposure)
+        refund_recorded.append(refund_ledger.spent['A'] / SCALE_RHO)
+
+    return (np.arange(1, 31), irrev_cumulative,
+            refund_cumulative, refund_recorded, cap_rho)
+
 def result_figures():
     df=pd.read_csv(DATA/'utility_runs.csv');details=json.loads((DATA/'details.json').read_text())
     audit=json.loads((DATA/'audit_summary.json').read_text())
@@ -81,7 +130,7 @@ def result_figures():
         ag=sub.groupby('epsilon').accuracy.agg(['mean','std'])
         ax.errorbar(ag.index,ag['mean']*100,yerr=ag['std']*100,marker='o',color=TEAL,
                     capsize=3,lw=1.6,label='Private FL and audited private FL')
-        base=df[(df.dataset==dataset)&(df.setting=='nonprivate')].accuracy.iloc[0]*100
+        base=df[(df.dataset==dataset)&(df.setting=='nonprivate')].accuracy.mean()*100
         ax.axhline(base,color=NAVY,ls='--',label='Matched nonprivate baseline')
         ax.set_xscale('log',base=2);ax.set_xticks([.5,1,2,4,8],['0.5','1','2','4','8'])
         ax.set(xlabel='Total privacy budget ε',ylabel='Test accuracy',title=label)
@@ -107,6 +156,7 @@ def result_figures():
         ax.set(xlabel='Predicted class',ylabel='True class',title='Wearable surrogate' if dataset=='wearable' else 'Public WDBC')
         for spine in ax.spines.values():spine.set_visible(False)
     fig.tight_layout(w_pad=2);save(fig,'figure5_confusion')
+
     attacks=pd.read_csv(DATA/'audit_attacks.csv')
     fig,axes=plt.subplots(1,2,figsize=(7.2,4))
     names=['Payload change','Replay','Stale parent','Forged signature','Revocation','Overspend','Refund attempt','Altered aggregate','Signed poisoning']
@@ -116,14 +166,19 @@ def result_figures():
     axes[0].set_xticks([0,50,100])
     axes[0].xaxis.set_major_formatter(fmt)
     for i,x in enumerate(attacks.rejection_rate*100):axes[0].text(x+2,i,f'{x:.2f}%',va='center',fontsize=7.8)
-    attempts=np.arange(1,31)
-    axes[1].plot(attempts,np.minimum(attempts,10)*.01,color=TEAL,lw=2,label='Irreversible reservation')
-    axes[1].plot(attempts,attempts*.01,color=RED,lw=2,label='Release then refund')
-    axes[1].plot(attempts,np.zeros(30),color=NAVY,ls=':',label='Refunded ledger counter')
-    axes[1].axhline(.1,color='#777777',ls='--',label='Configured ρ cap')
-    axes[1].set(xlabel='Release attempt',ylabel='Actual or recorded cumulative ρ',title='Refund attack on privacy accounting')
-    axes[1].legend(fontsize=7,loc='upper left');axes[1].set_ylim(-.015,.325)
+
+    # Fix 6: right panel from real Ledger runs
+    attempts, irrev, refund_actual, refund_recorded, cap_rho = _build_right_panel_from_ledger()
+    axes[1].plot(attempts, irrev,           color=TEAL,  lw=2, label='Irreversible reservation (BAPFL)')
+    axes[1].plot(attempts, refund_actual,   color=RED,   lw=2, label='Release then refund (actual exposure)')
+    axes[1].plot(attempts, refund_recorded, color=NAVY,  lw=1.4, ls=':', label='Refunded ledger counter')
+    axes[1].axhline(cap_rho, color='#777777', ls='--', label=f'Configured ρ cap ({cap_rho})')
+    axes[1].set(xlabel='Release attempt',
+                ylabel='Actual or recorded cumulative ρ',
+                title='Refund attack on privacy accounting\n(from real Ledger runs)')
+    axes[1].legend(fontsize=7, loc='upper left'); axes[1].set_ylim(-.015, .325)
     fig.tight_layout(w_pad=1.8);save(fig,'figure6_audit_budget')
+
     fig,axes=plt.subplots(1,2,figsize=(7.2,3.35))
     tt=audit['local_timings'];steps=['reserve','sign_receipt','submit_verify','payload_verify']
     x=np.arange(4)
