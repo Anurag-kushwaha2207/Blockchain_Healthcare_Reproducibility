@@ -360,7 +360,6 @@ figure('figure5_confusion','Raw confusion matrix counts for ε = 4 in the presel
 h('7.3 Effect of the auditing layer',2)
 # Fix 8: events breakdown derived from JSON
 _ev_per_run = audit['events_per_training_run']
-_rounds_used = cfg.get('tuned_hp',{}).get('wearable',{}).get('rounds', ROUNDS if hasattr(cfg,'get') else 80)
 # events = open_round + 3*reserve + 3*submit + 3*accept + aggregate per round
 p(f'Across the 20 paired \u03b5 = 4 wearable runs, enabling the signed ledger audit hook yields exactly the same final numerical model as disabling it under the same noise draws. The largest observed difference between the reported update and an independently recomputed weighted average is {audit["maximum_aggregate_difference"]:.2e}, below the 10\u207b\u00b9\u00b2 verification threshold. Each completed run emits {_ev_per_run} ledger events. Thus the benign utility result is a consequence of auditing a fixed computation, not a separate training gain.')
 p('The paired check supplies an ablation for the governance layer: its signatures, commitments and accounting do not perturb the optimiser. It does not test availability under late institutions or consensus stalls. A production federation that rejects or loses a participant changes the accepted aggregation roster and can change utility even when all protected updates are valid. Such cases need a separate participation policy and an accountant that retains the cost of every already disclosed output.')

@@ -6,25 +6,26 @@
   "configured_rho_cap": 0.1,
   "local_timings": {
     "reserve": {
-      "median_ms": 0.1165,
-      "p95_ms": 0.210135
+      "median_ms": 0.2176,
+      "p95_ms": 0.24520999999999998
     },
     "sign_receipt": {
-      "median_ms": 0.0477,
-      "p95_ms": 0.0906
+      "median_ms": 0.0536,
+      "p95_ms": 0.059605
     },
     "submit_verify": {
-      "median_ms": 0.2241,
-      "p95_ms": 0.415125
+      "median_ms": 0.2247,
+      "p95_ms": 0.26363
     },
     "payload_verify": {
-      "median_ms": 0.0089,
-      "p95_ms": 0.060004999999999996
+      "median_ms": 0.1274,
+      "p95_ms": 0.13881
     }
   },
   "median_receipt_bytes": 473,
   "matched_runs": 20,
-  "maximum_aggregate_difference": 4.440892098500626e-16,
+  "maximum_aggregate_difference": 8.881784197001252e-16,
   "identical_final_models": 20,
-  "events_per_training_run": 560
+  "events_per_training_run": 1320,
+  "ledger_runs_count": 20
 }
