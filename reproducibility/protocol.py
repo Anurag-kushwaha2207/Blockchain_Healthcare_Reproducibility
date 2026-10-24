@@ -236,10 +236,12 @@ class Ledger:
 
             # Write accepted_clients in roster order, never list(set)
             accepted_clients = [c for c in roster]
+            client_hashes = {c: self.accept_hashes[(c, t)] for c in roster}
             self._append({'type': 'aggregate', 'round': t,
                           'model_hash': model_hash(claimed),
                           'parent': self.round_parent[t],
                           'accepted_clients': accepted_clients,
+                          'client_model_hashes': client_hashes,
                           'weights': derived_weights})
             return True
 
@@ -256,6 +258,9 @@ class Ledger:
         state_machine  = {}  # (client, round) -> state
         round_parent_r = {}
         round_accepted = {}  # round -> set of accepted clients
+        round_roster_r = {}  # round -> roster list
+        round_sample_n_r = {} # round -> {client: sample_count}
+        round_accept_hashes_r = {} # round -> {client: model_hash}
 
         for i, r in enumerate(self.records):
             # --- hash-chain integrity ---
@@ -276,8 +281,12 @@ class Ledger:
             etype = ev.get('type')
 
             if etype == 'open_round':
-                round_parent_r[int(ev['round'])] = ev['parent']
-                round_accepted[int(ev['round'])]  = set()
+                rnd = int(ev['round'])
+                round_parent_r[rnd] = ev['parent']
+                round_accepted[rnd] = set()
+                round_roster_r[rnd] = list(ev.get('roster', []))
+                round_sample_n_r[rnd] = {c: int(n) for c, n in ev.get('sample_counts', {}).items()}
+                round_accept_hashes_r[rnd] = {}
 
             elif etype == 'reserve':
                 c = ev['client']; rnd = int(ev['round'])
@@ -299,16 +308,54 @@ class Ledger:
                 state_machine[key] = 'submitted'
 
             elif etype == 'accept':
-                key = (ev['client'], int(ev['round']))
+                rnd = int(ev['round'])
+                key = (ev['client'], rnd)
                 if state_machine.get(key) != 'submitted':
                     return False
                 state_machine[key] = 'accepted'
-                round_accepted[int(ev['round'])].add(ev['client'])
+                round_accepted[rnd].add(ev['client'])
+                if rnd in round_accept_hashes_r:
+                    round_accept_hashes_r[rnd][ev['client']] = ev.get('model_hash')
 
             elif etype == 'aggregate':
                 rnd = int(ev['round'])
-                claimed_accepted = set(ev.get('accepted_clients', []))
-                if claimed_accepted != round_accepted.get(rnd, set()):
+                roster = round_roster_r.get(rnd)
+                sample_n = round_sample_n_r.get(rnd)
+                if roster is None or sample_n is None:
+                    return False
+
+                acc_clients = ev.get('accepted_clients', [])
+                # Must match exact roster in roster order
+                if acc_clients != roster:
+                    return False
+                # Check each accepted client actually has an accept event
+                accept_hashes_rnd = round_accept_hashes_r.get(rnd, {})
+                if any(c not in accept_hashes_rnd for c in acc_clients):
+                    return False
+
+                # Check weights against open_round sample counts
+                N = sum(sample_n[c] for c in acc_clients)
+                if N <= 0:
+                    return False
+                expected_weights = [sample_n[c] / N for c in acc_clients]
+                actual_weights = ev.get('weights', [])
+                if len(actual_weights) != len(expected_weights):
+                    return False
+                for ew, aw in zip(expected_weights, actual_weights):
+                    if abs(ew - aw) > 1e-9:
+                        return False
+
+                # Check client model hashes recorded in aggregate match accept events
+                if 'client_model_hashes' in ev:
+                    for c, h in ev['client_model_hashes'].items():
+                        if accept_hashes_rnd.get(c) != h:
+                            return False
+
+                # Check parent and valid model_hash format
+                if ev.get('parent') != round_parent_r.get(rnd):
+                    return False
+                mh = ev.get('model_hash', '')
+                if not isinstance(mh, str) or len(mh) != 64:
                     return False
 
             previous = r['hash']
