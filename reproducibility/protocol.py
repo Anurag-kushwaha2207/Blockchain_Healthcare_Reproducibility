@@ -464,8 +464,22 @@ def local_timings(n=1000):
         t_=time.perf_counter_ns();assert l.receive(r,a);timings['payload_verify'].append((time.perf_counter_ns()-t_)/1e6)
     return {k:{'median_ms':float(np.median(v)),'p95_ms':float(np.quantile(v,.95))} for k,v in timings.items()},int(np.median(byte_counts))
 
+def get_dataset_hp(dataset_name='wearable'):
+    """Single source of truth for hyperparameters: loads tuned hyperparameters
+    from results/config.json if available, or falls back to DATASET_HP from experiment.py.
+    """
+    cfg_file = Path(__file__).resolve().parent / 'results' / 'config.json'
+    if cfg_file.exists():
+        try:
+            cfg = json.loads(cfg_file.read_text())
+            if 'tuned_hp' in cfg and dataset_name in cfg['tuned_hp']:
+                return cfg['tuned_hp'][dataset_name]
+        except Exception:
+            pass
+    return DATASET_HP[dataset_name]
+
 def audit_reproduction():
-    hp = DATASET_HP['wearable']
+    hp = get_dataset_hp('wearable')
     rounds = hp['rounds']
     X,y=wearable_data();tr,te=train_test_split(np.arange(len(y)),test_size=.2,stratify=y,random_state=77)
     discrepancies=[];chains=[];ledger_runs=[]
@@ -515,7 +529,8 @@ def main():
     timings,receipt_bytes=local_timings()
     audit,example,ledger_runs=audit_reproduction()
     result={**counters,'local_timings':timings,'median_receipt_bytes':receipt_bytes,**audit,
-            'ledger_runs_count':len(ledger_runs)}
+            'ledger_runs_count':len(ledger_runs),
+            'audit_hyperparameters':get_dataset_hp('wearable')}
     (out/'audit_summary.json').write_text(json.dumps(result,indent=2))
     (out/'ledger_example.json').write_text(json.dumps(example,indent=2))
     print(pd.DataFrame(attacks).to_string(index=False));print(json.dumps(result,indent=2))

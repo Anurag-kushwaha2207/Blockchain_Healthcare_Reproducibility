@@ -6,26 +6,31 @@
   "configured_rho_cap": 0.1,
   "local_timings": {
     "reserve": {
-      "median_ms": 0.2275,
-      "p95_ms": 0.301705
+      "median_ms": 0.2248,
+      "p95_ms": 0.269615
     },
     "sign_receipt": {
-      "median_ms": 0.0556,
-      "p95_ms": 0.088405
+      "median_ms": 0.0546,
+      "p95_ms": 0.08340499999999999
     },
     "submit_verify": {
-      "median_ms": 0.2346,
-      "p95_ms": 0.306905
+      "median_ms": 0.2324,
+      "p95_ms": 0.276325
     },
     "payload_verify": {
-      "median_ms": 0.13375,
-      "p95_ms": 0.18160500000000002
+      "median_ms": 0.1306,
+      "p95_ms": 0.16990999999999998
     }
   },
   "median_receipt_bytes": 473,
   "matched_runs": 20,
-  "maximum_aggregate_difference": 4.440892098500626e-16,
+  "maximum_aggregate_difference": 8.881784197001252e-16,
   "identical_final_models": 20,
   "events_per_training_run": 880,
-  "ledger_runs_count": 20
+  "ledger_runs_count": 20,
+  "audit_hyperparameters": {
+    "eta": 8.0,
+    "clip": 1.0,
+    "rounds": 80
+  }
 }
