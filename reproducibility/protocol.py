@@ -50,6 +50,7 @@ class Ledger:
         # Fix 2: roster and weights anchored per round
         self.round_roster={}    # round -> [client, ...]
         self.round_sample_n={}  # round -> {client: n_k}
+        self.accept_hashes={}   # (client, round) -> model_hash (Fix 3)
 
     def _append(self,event):
         body={'height':len(self.records),'parent':self.head,'event':event}
@@ -166,11 +167,13 @@ class Ledger:
             if digest(bytes.fromhex(r['nonce'])+array_bytes(a))!=r['commitment']:self.reason='commitment';return False
             self.used.add(key)
             self.reservations[key]['state']='accepted'
+            mh = model_hash(a)
+            self.accept_hashes[key] = mh
             # Fix 3: append an accept event
             self._append({'type': 'accept',
                           'client': key[0],
                           'round':  key[1],
-                          'model_hash': model_hash(a),
+                          'model_hash': mh,
                           'commitment': r['commitment']})
             return True
 
@@ -186,9 +189,12 @@ class Ledger:
         """Fix 2: verify the aggregate before appending the event.
 
         Weights are DERIVED from the frozen roster and sample counts.  Any
-        caller-supplied weight vector is rejected if it does not match.  The
-        aggregate is verified to sum to 1 and the infinity-norm difference to
-        the claimed model must be <= 1e-12.
+        caller-supplied weight vector is rejected if len(weights) != len(roster)
+        or if any weight does not match.  Requires len(models) == len(roster).
+        Compares sha256 (model_hash) of each supplied model with the accept event
+        model_hash and rejects on mismatch.  Rejects the round unless all roster
+        clients were accepted (no renormalising).  Writes accepted_clients strictly
+        in roster order (never list(set)).
         """
         t = int(t)
         with self.lock:
@@ -196,39 +202,45 @@ class Ledger:
             sample_n = self.round_sample_n.get(t)
             if roster is None or sample_n is None:
                 raise ValueError('no_open_round')
+            if len(models) != len(roster):
+                raise ValueError('wrong_length_models')
+            if weights is not None and len(weights) != len(roster):
+                raise ValueError('wrong_length_weights')
+
             N = sum(sample_n[c] for c in roster)
             derived_weights = [sample_n[c] / N for c in roster]
             if abs(sum(derived_weights) - 1.0) > 1e-9:
                 raise ValueError('weights_do_not_sum_to_one')
+
             # Reject caller-supplied weights that differ from derived
             if weights is not None:
                 for dw, cw in zip(derived_weights, weights):
                     if abs(dw - cw) > 1e-9:
                         raise ValueError('weight_mismatch')
-            # Only aggregate over accepted clients in this round
-            accepted = {c for (c, r) in self.used if r == t}
-            accepted_models = []
-            accepted_weights = []
+
+            # Item 3: reject round unless all roster clients were accepted (no renormalisation)
+            # and compare sha256 of each supplied model with accept event's model_hash
             for c, m in zip(roster, models):
-                if c in accepted:
-                    accepted_models.append(m)
-                    accepted_weights.append(sample_n[c] / N)
-            if not accepted_models:
-                raise ValueError('no_accepted_clients')
-            # renormalize over accepted subset
-            w_sum = sum(accepted_weights)
-            accepted_weights = [w / w_sum for w in accepted_weights]
+                key = (c, t)
+                if key not in self.accept_hashes:
+                    raise ValueError(f'missing_roster_client: {c}')
+                if model_hash(m) != self.accept_hashes[key]:
+                    raise ValueError(f'model_hash_mismatch for client {c}')
+
             expected = np.sum(
-                np.array(accepted_models) * np.asarray(accepted_weights)[:, None, None],
+                np.array(models) * np.asarray(derived_weights)[:, None, None],
                 axis=0)
             diff = float(np.max(np.abs(expected - claimed)))
             if diff > 1e-12:
                 raise ValueError(f'aggregate_mismatch diff={diff:.3e}')
+
+            # Write accepted_clients in roster order, never list(set)
+            accepted_clients = [c for c in roster]
             self._append({'type': 'aggregate', 'round': t,
                           'model_hash': model_hash(claimed),
                           'parent': self.round_parent[t],
-                          'accepted_clients': list(accepted),
-                          'weights': accepted_weights})
+                          'accepted_clients': accepted_clients,
+                          'weights': derived_weights})
             return True
 
     def verify_chain(self, trusted_head=None):
