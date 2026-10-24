@@ -137,46 +137,105 @@ class Ledger:
         r['signature']=self.client_keys[client].sign(canonical(r)).hex()
         return r
 
-    def submit(self,r):
+    def submit(self, r):
         with self.lock:
-            self.reason=None
-            client=r.get('client');t=int(r.get('round'));key=(client,t)
-            reserved=self.reservations.get(key)
-            if reserved is None:self.reason='no_reservation';return False
-            if not self.active[client] or r.get('consent_epoch')!=self.epoch[client]:self.reason='revoked';return False
-            if r.get('parent_model')!=self.round_parent.get(t):self.reason='stale_parent';return False
-            for field in ['cost_units','consent_epoch','client','round','parent_model']:
-                if r.get(field)!=reserved[field]:self.reason='reservation_mismatch';return False
-            if key in self.submissions:self.reason='replay';return False
-            unsigned={k:v for k,v in r.items() if k!='signature'}
-            try:self.client_keys[client].public_key().verify(bytes.fromhex(r['signature']),canonical(unsigned))
-            except (InvalidSignature,ValueError,KeyError):self.reason='signature';return False
-            self.submissions[key]=copy.deepcopy(r)
-            reserved['state']='submitted'
-            self._append({'type':'submit',**r})
+            self.reason = None
+            if not isinstance(r, dict):
+                self.reason = 'malformed_receipt'; return False
+            client = r.get('client')
+            round_val = r.get('round')
+            if not isinstance(client, str) or round_val is None:
+                self.reason = 'malformed_receipt'; return False
+            try:
+                t = int(round_val)
+            except (ValueError, TypeError):
+                self.reason = 'malformed_receipt'; return False
+            key = (client, t)
+            reserved = self.reservations.get(key)
+            if reserved is None: self.reason = 'no_reservation'; return False
+            if client not in self.active or not self.active[client] or r.get('consent_epoch') != self.epoch.get(client):
+                self.reason = 'revoked'; return False
+            if r.get('parent_model') != self.round_parent.get(t):
+                self.reason = 'stale_parent'; return False
+            for field in ['cost_units', 'consent_epoch', 'client', 'round', 'parent_model']:
+                if r.get(field) != reserved.get(field):
+                    self.reason = 'reservation_mismatch'; return False
+            if key in self.submissions:
+                self.reason = 'replay'; return False
+            sig_hex = r.get('signature')
+            if not isinstance(sig_hex, str):
+                self.reason = 'signature'; return False
+            unsigned = {k: v for k, v in r.items() if k != 'signature'}
+            try:
+                sig_bytes = bytes.fromhex(sig_hex)
+                self.client_keys[client].public_key().verify(sig_bytes, canonical(unsigned))
+            except (InvalidSignature, ValueError, KeyError):
+                self.reason = 'signature'; return False
+            self.submissions[key] = copy.deepcopy(r)
+            reserved['state'] = 'submitted'
+            self._append({'type': 'submit', **r})
             return True
 
     def receive(self, r, a):
         """Verify the off-chain payload and accept the update.
-        Fix 3: appends an 'accept' event on success.
+        Item 6: append the accept event first, then update state, with rollback.
+        submit()/receive(): return False with a reason on malformed input instead of raising.
         """
         with self.lock:
-            key=(r.get('client'), int(r.get('round')));self.reason=None
-            if key in self.used:self.reason='replay';return False
-            if self.submissions.get(key)!=r:self.reason='uncommitted_receipt';return False
-            if not self.active[key[0]] or r['consent_epoch']!=self.epoch[key[0]]:self.reason='revoked';return False
-            if not np.isfinite(a).all():self.reason='nonfinite';return False
-            if digest(bytes.fromhex(r['nonce'])+array_bytes(a))!=r['commitment']:self.reason='commitment';return False
-            self.used.add(key)
-            self.reservations[key]['state']='accepted'
+            self.reason = None
+            if not isinstance(r, dict):
+                self.reason = 'malformed_receipt'; return False
+            if not isinstance(a, np.ndarray):
+                self.reason = 'malformed_payload'; return False
+            client = r.get('client')
+            round_val = r.get('round')
+            if not isinstance(client, str) or round_val is None:
+                self.reason = 'malformed_receipt'; return False
+            try:
+                t = int(round_val)
+            except (ValueError, TypeError):
+                self.reason = 'malformed_receipt'; return False
+            key = (client, t)
+            if key in self.used:
+                self.reason = 'replay'; return False
+            if self.submissions.get(key) != r:
+                self.reason = 'uncommitted_receipt'; return False
+            if client not in self.active or not self.active[client] or r.get('consent_epoch') != self.epoch.get(client):
+                self.reason = 'revoked'; return False
+            if not np.isfinite(a).all():
+                self.reason = 'nonfinite'; return False
+            nonce_hex = r.get('nonce')
+            commitment = r.get('commitment')
+            if not isinstance(nonce_hex, str) or not isinstance(commitment, str):
+                self.reason = 'malformed_receipt'; return False
+            try:
+                nonce_bytes = bytes.fromhex(nonce_hex)
+            except (ValueError, TypeError):
+                self.reason = 'malformed_receipt'; return False
+            if digest(nonce_bytes + array_bytes(a)) != commitment:
+                self.reason = 'commitment'; return False
+
+            # Item 6: append the accept event first, then update state, with rollback on exception
             mh = model_hash(a)
-            self.accept_hashes[key] = mh
-            # Fix 3: append an accept event
-            self._append({'type': 'accept',
-                          'client': key[0],
-                          'round':  key[1],
-                          'model_hash': mh,
-                          'commitment': r['commitment']})
+            accept_event = {'type': 'accept',
+                            'client': key[0],
+                            'round': key[1],
+                            'model_hash': mh,
+                            'commitment': commitment}
+            try:
+                self._append(accept_event)
+                # Only update state after successful append:
+                self.used.add(key)
+                self.accept_hashes[key] = mh
+                if key in self.reservations:
+                    self.reservations[key]['state'] = 'accepted'
+            except Exception:
+                # Rollback state on append failure
+                self.used.discard(key)
+                self.accept_hashes.pop(key, None)
+                if key in self.reservations:
+                    self.reservations[key]['state'] = 'submitted'
+                raise
             return True
 
     def revoke(self,c):
