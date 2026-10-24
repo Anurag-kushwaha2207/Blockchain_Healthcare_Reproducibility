@@ -64,6 +64,14 @@ process lock. Timings are local cryptographic microbenchmarks, not network
 finality latency or blockchain throughput. Their exact values vary by machine
 and load and are not expected to reproduce bit for bit.
 
+**Ledger hashes differ across platforms.** SHA-256 block hashes depend on the
+canonical JSON encoding of model weights (little-endian float64 bytes) and the
+exact ledger event sequence. Different Python versions, NumPy versions, or
+operating systems may produce different floating-point byte representations,
+resulting in different hash chains. This is expected and does not indicate a
+correctness problem; the chain-integrity check (verify_chain) passes on the
+same platform that produced it.
+
 Benchmark keys, nonces and random seeds are deliberately public fixtures. They
 must never be reused with confidential records. Real deployments require fresh
 protected randomness, secure signing keys, durable budget scopes, actual
