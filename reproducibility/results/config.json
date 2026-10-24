@@ -14,24 +14,990 @@
   ],
   "python": "3.14.0",
   "platform": "Windows-11-10.0.26300-SP0",
-  "elapsed_seconds": 149.38962880000008,
+  "elapsed_seconds": 84.39547669999956,
   "tuned_hp": {
     "wearable": {
-      "eta": 4.0,
-      "clip": 2.0,
-      "rounds": 160
+      "eta": 8.0,
+      "clip": 1.0,
+      "rounds": 80
     },
     "wdbc": {
-      "eta": 2.0,
-      "clip": 2.0,
-      "rounds": 160
+      "eta": 1.0,
+      "clip": 1.0,
+      "rounds": 60
     }
+  },
+  "tuning_grids": {
+    "wearable": [
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.5166666666666667
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.5138888888888888
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.5152777777777777
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.5152777777777777
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.5166666666666667
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.5166666666666667
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.5222222222222223
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.5277777777777778
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.6083333333333333
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.625
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.6375
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.65
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.6041666666666666
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.6291666666666667
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.6430555555555556
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6486111111111111
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.5166666666666667
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.5138888888888888
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.5152777777777777
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.5125
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.5319444444444444
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.55
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.5638888888888889
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.5819444444444445
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.6458333333333334
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.6680555555555555
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.6833333333333333
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.6833333333333333
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.6458333333333334
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.6652777777777777
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.6722222222222223
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6875
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.5166666666666667
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.5152777777777777
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.5277777777777778
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.5375
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.5847222222222223
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.6083333333333333
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.6180555555555556
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.6236111111111111
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.6847222222222222
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.6972222222222222
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.6958333333333333
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.6986111111111111
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.6763888888888889
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.6972222222222222
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.6944444444444444
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6958333333333333
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.5430555555555555
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.5583333333333333
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.5625
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.5652777777777778
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.6236111111111111
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.6402777777777777
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.65
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.6375
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.6944444444444444
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.7166666666666667
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.7013888888888888
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.7055555555555556
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.6930555555555555
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.7138888888888889
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.7097222222222223
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6819444444444445
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.5708333333333333
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.5847222222222223
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.5888888888888889
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.5791666666666667
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.65
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.6583333333333333
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.6555555555555556
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.6361111111111111
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.7041666666666667
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.7194444444444444
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.7152777777777778
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.6972222222222222
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.7
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.7083333333333334
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.6986111111111111
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6916666666666667
+      }
+    ],
+    "wdbc": [
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.8253968253968254
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.8412698412698413
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.8412698412698413
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.873015873015873
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.8888888888888888
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 0.5,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 0.5,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 0.5,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.873015873015873
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.8888888888888888
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 1.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.8888888888888888
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.9206349206349206
+      },
+      {
+        "eta": 2.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.8412698412698413
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 4.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.873015873015873
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 4.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.7777777777777778
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 80,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.3,
+        "rounds": 120,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 80,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 100,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 0.5,
+        "rounds": 120,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 60,
+        "val_accuracy": 0.9523809523809523
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 80,
+        "val_accuracy": 0.9047619047619048
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 100,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 8.0,
+        "clip": 1.0,
+        "rounds": 120,
+        "val_accuracy": 0.8253968253968254
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 60,
+        "val_accuracy": 0.9365079365079365
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 80,
+        "val_accuracy": 0.8412698412698413
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 100,
+        "val_accuracy": 0.8888888888888888
+      },
+      {
+        "eta": 8.0,
+        "clip": 2.0,
+        "rounds": 120,
+        "val_accuracy": 0.6349206349206349
+      }
+    ]
   },
   "before_after": [
     {
       "dataset": "wearable",
       "before_acc": 0.6291666666666667,
-      "after_acc": 0.7125,
+      "after_acc": 0.7141666666666666,
       "before_recalls": [
         0.9533333333333334,
         0.3233333333333333,
@@ -39,23 +1005,23 @@
         0.96
       ],
       "after_recalls": [
-        0.8833333333333333,
-        0.53,
-        0.5633333333333334,
+        0.89,
+        0.5333333333333333,
+        0.56,
         0.8733333333333333
       ]
     },
     {
       "dataset": "wdbc",
       "before_acc": 0.9230769230769231,
-      "after_acc": 0.951048951048951,
+      "after_acc": 0.9230769230769231,
       "before_recalls": [
         0.8490566037735849,
         0.9666666666666667
       ],
       "after_recalls": [
-        0.9056603773584906,
-        0.9777777777777777
+        0.8490566037735849,
+        0.9666666666666667
       ]
     }
   ]

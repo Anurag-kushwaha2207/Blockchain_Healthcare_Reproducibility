@@ -25,8 +25,8 @@ EPSILONS=[0.5,1.0,2.0,4.0,8.0]
 # The test set is never touched during tuning.  Chosen settings are then frozen
 # across all epsilon values and seeds.
 DATASET_HP = {
-    'wearable': {'eta': 4.0, 'clip': 1.0, 'rounds': 120},
-    'wdbc':     {'eta': 2.0, 'clip': 0.5, 'rounds':  80},
+    'wearable': {'eta': 4.0, 'clip': 1.0, 'rounds': 80},
+    'wdbc':     {'eta': 2.0, 'clip': 0.5, 'rounds': 80},
 }
 
 def rho_limit(epsilon,delta=DELTA):
@@ -94,14 +94,14 @@ def partition(y,k,alpha,seed):
             return [np.asarray(a,dtype=int) for a in ids]
     raise RuntimeError('Cannot obtain a valid partition')
 
-def tune_hp(name, X, y, tr_idx, val_size=0.15, seed=42):
-    """Grid-search eta/clip/rounds on a validation split carved from training.
+def tune_hp(name, X, y, tr_idx, val_size=0.15, eps_tune=4.0, seed=42):
+    """Grid-search eta/clip/rounds on a validation split carved from training UNDER DP noise (eps=4).
 
-    The test set is never seen here.  Returns a dict that can override the
-    module-level defaults.  Learning rate 100 is explicitly excluded because it
-    diverges; any run where final accuracy <= random chance is skipped.
+    The test set is never seen during tuning.
+    Tuning under DP noise (eps=4.0) prevents picking over-optimistic high clips / rounds
+    that severely degrade private utility.
+    Returns (best_hp, grid_report).
     """
-    best_acc, best_hp = -1.0, DATASET_HP[name]
     rng = np.random.default_rng(seed)
     n_tr = len(tr_idx)
     val_n = max(1, int(n_tr * val_size))
@@ -109,36 +109,31 @@ def tune_hp(name, X, y, tr_idx, val_size=0.15, seed=42):
     val_local  = tr_idx[perm[:val_n]]
     tune_local = tr_idx[perm[val_n:]]
 
-    Xt, yt = X[tune_local], y[tune_local]
-    Xv, yv = X[val_local],  y[val_local]
+    local_parts = partition(y[tune_local], 3, 1.0, seed=1000)
+    tune_ids = [tune_local[p] for p in local_parts]
 
-    random_chance = 1.0 / len(np.unique(y))
     eta_grid   = [0.5, 1.0, 2.0, 4.0, 8.0]   # 100 diverges — excluded
     clip_grid  = [0.3, 0.5, 1.0, 2.0]
-    round_grid = [60, 80, 120, 160]
+    round_grid = [60, 80, 100, 120]
 
+    grid_report = []
+    best_acc, best_hp = -1.0, DATASET_HP[name]
+
+    print(f"--- Tuning {name} on val split under DP noise (eps={eps_tune}) ---", flush=True)
     for eta in eta_grid:
         for clip in clip_grid:
             for rounds in round_grid:
-                classes = int(y.max() + 1)
-                W = np.zeros((classes, Xt.shape[1]))
-                Y = np.eye(classes)[yt]
-                for _ in range(rounds):
-                    p = softmax(Xt @ W.T, axis=1)
-                    G = (p - Y)[:, :, None] * Xt[:, None, :]
-                    norms = np.linalg.norm(G.reshape(len(Xt), -1), axis=1)
-                    factors = np.minimum(1, clip / np.maximum(norms, 1e-15))
-                    g = (G * factors[:, None, None]).mean(axis=0)
-                    W -= eta * (g + L2 * W)
-                    if not np.isfinite(W).all():   # diverged
-                        break
-                if not np.isfinite(W).all():
-                    continue
-                acc = accuracy_score(yv, np.argmax(Xv @ W.T, axis=1))
-                if acc > random_chance and acc > best_acc:
+                res = train(X, y, X[val_local], y[val_local], tune_ids,
+                            epsilon=eps_tune, seed=5000,
+                            eta=eta, clip=clip, rounds=rounds)
+                acc = res['accuracy']
+                grid_report.append({'eta': eta, 'clip': clip, 'rounds': rounds, 'val_accuracy': acc})
+                if acc > best_acc:
                     best_acc = acc
                     best_hp  = {'eta': eta, 'clip': clip, 'rounds': rounds}
-    return best_hp
+
+    print(f"Chosen {name} HP under DP (eps={eps_tune}): {best_hp} (val_acc={best_acc:.4f})", flush=True)
+    return best_hp, grid_report
 
 
 def train(X,y,Xtest,ytest,ids,epsilon,seed,audit_hook=None,audit_reserve_hook=None,
@@ -209,9 +204,9 @@ def main():
                               stratify=y,random_state=77)
         Xtr,ytr,Xte,yte=X[tr],y[tr],X[te],y[te]
 
-        # ---- Fix 1: tune on val split, never touching the test set ------------
-        hp = tune_hp(name, X, y, tr, val_size=0.15, seed=42)
-        print(f'{name}: tuned hp = {hp}', flush=True)
+        # ---- Fix 1: tune on val split under DP noise, never touching test set -
+        hp, grid_report = tune_hp(name, X, y, tr, val_size=0.15, eps_tune=4.0, seed=42)
+        print(f'{name}: chosen hp under DP = {hp}', flush=True)
 
         # Before accuracy (original defaults, nonprivate, seed 0)
         ids0 = partition(ytr, 3, 1.0, 1000)
@@ -232,6 +227,7 @@ def main():
             'before_recalls': before_recalls,
             'after_recalls':  after_recalls,
             'tuned_hp': hp,
+            'tuning_grid': grid_report,
         })
         print(f'{name}: before={before_acc*100:.2f}%  after={after_acc*100:.2f}%', flush=True)
         print(f'  before recalls: {[f"{r*100:.1f}%" for r in before_recalls]}', flush=True)
@@ -277,7 +273,8 @@ def main():
               'l2':L2,'seeds':args.seeds,'epsilon_grid':EPSILONS,'python':platform.python_version(),
               'platform':platform.platform(),'elapsed_seconds':time.perf_counter()-start,
               'tuned_hp':{ba['dataset']:ba['tuned_hp'] for ba in before_after},
-              'before_after':[{k:v for k,v in ba.items() if k!='tuned_hp'} for ba in before_after]}
+              'tuning_grids':{ba['dataset']:ba.get('tuning_grid') for ba in before_after},
+              'before_after':[{k:v for k,v in ba.items() if k not in ('tuned_hp','tuning_grid')} for ba in before_after]}
     (args.output/'details.json').write_text(json.dumps(details,indent=2))
     (args.output/'config.json').write_text(json.dumps(metadata,indent=2))
     print(summary.to_string(),flush=True)
