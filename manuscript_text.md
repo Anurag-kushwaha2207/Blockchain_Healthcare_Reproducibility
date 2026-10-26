@@ -7,7 +7,7 @@ Pranveer Singh Institute of Technology, Kanpur, India
 Abstract
 
 
-Cross institutional healthcare learning requires controls over both information disclosure and the integrity of shared model updates. We propose blockchain audited private federated learning, a permissioned protocol that couples each protected update to an irreversible privacy budget reservation, an institutional authorization epoch and a signed model commitment. Record gradients are clipped before Gaussian perturbation at every communication round. A zero concentrated differential privacy accountant bounds the complete training transcript, while independent auditors verify the weighted aggregation of committed protected models. The ledger stores governance metadata and commitments; patient records and model payloads remain off chain. We establish conditional privacy and reservation invariants and implement a signed ledger state machine emulator. Controlled experiments comprise 330 utility runs on a wholly synthetic four class wearable surrogate and the public Wisconsin Diagnostic Breast Cancer benchmark. At ε = 4 and δ = 10⁻⁵, mean accuracy across 20 runs is 69.63% ± 1.24% for the wearable surrogate and 88.08% ± 3.90% for the public benchmark. Auditing preserves the final model exactly in 20 matched runs. Eight defined protocol fault classes are rejected in 1,000 trials each, and concurrent budget reservations admit exactly one request in all 100 contention tests, each with two simultaneous requests. A signed poisoning negative control remains accepted, demonstrating that provenance does not establish statistical correctness. The contribution is an explicit disclosure accounting lifecycle with verifiable model provenance, evaluated at protocol level; clinical validation and distributed consensus benchmarking remain necessary.
+Cross institutional healthcare learning requires controls over both information disclosure and the integrity of shared model updates. We propose blockchain audited private federated learning, a permissioned protocol that couples each protected update to an irreversible privacy budget reservation, an institutional authorization epoch and a signed model commitment. Record gradients are clipped before Gaussian perturbation at every communication round. A zero concentrated differential privacy accountant bounds the complete training transcript, while independent auditors verify the weighted aggregation of committed protected models. The ledger stores governance metadata and commitments; patient records and model payloads remain off chain. We establish conditional privacy and reservation invariants and implement a signed ledger state machine emulator. Controlled experiments comprise 330 utility runs on a wholly synthetic four class wearable surrogate and the public Wisconsin Diagnostic Breast Cancer benchmark. At ε = 4 and δ = 10⁻⁵, mean accuracy across 20 runs is 70.90% ± 0.66% for the wearable surrogate and 92.59% ± 1.58% for the public benchmark. Auditing preserves the final model exactly in 20 matched runs. 12 defined protocol fault classes are rejected in 1,000 trials each, and concurrent budget reservations admit exactly one request in all 100 contention tests, each with two simultaneous requests. A signed poisoning negative control remains accepted, demonstrating that provenance does not establish statistical correctness. The contribution is an explicit disclosure accounting lifecycle with verifiable model provenance, evaluated at protocol level; clinical validation and distributed consensus benchmarking remain necessary.
 
 Keywords  blockchain governance; federated learning; differential privacy; healthcare analytics; privacy accounting; verifiable aggregation
 
@@ -135,7 +135,7 @@ Equation 3: Fixed augmented input norm projection
 4.2 Private local update and model averaging
 
 
-At round t, all participating clients receive the same authenticated parent model Wt. Institution k computes one full batch gradient contribution for each local record, then clips the complete gradient matrix in Frobenius norm at C. The clipping operation acts on each actual contribution, not merely on a number used later in a sensitivity formula. The mean clipped gradient receives independent Gaussian noise in every coordinate. The implementation uses C = 0.5, η = 2.0 and λ = 0.003, with 80 rounds.
+At round t, all participating clients receive the same authenticated parent model Wt. Institution k computes one full batch gradient contribution for each local record, then clips the complete gradient matrix in Frobenius norm at C. The clipping operation acts on each actual contribution, not merely on a number used later in a sensitivity formula. The mean clipped gradient receives independent Gaussian noise in every coordinate. The tuned settings are C = 1.00, η = 8.00 with 80 rounds for the wearable surrogate, and C = 1.00, η = 1.00 with 60 rounds for WDBC, each with λ = 0.003.
 
 Equation 4: Actual per record gradient clipping
 
@@ -281,11 +281,11 @@ Test class counts | 300 per class | 53 malignant and 90 benign
 
 Primary simulated institutions | 3 | 3
 
-Rounds and local steps | 80 and 1 | 80 and 1
+Rounds and local steps | 80 and 1 | 60 and 1
 
-Gradient clipping C | 0.50 | 0.50
+Gradient clipping C | 1.00 | 1.00
 
-Step size η and penalty λ | 2.00 and 0.003 | 2.00 and 0.003
+Step size η and penalty λ | 8.00 and 0.003 | 1.00 and 0.003
 
 Privacy budgets ε | 0.50  1.00  2.00  4.00  8.00 | 0.50  1.00  2.00  4.00  8.00
 
@@ -305,9 +305,9 @@ The emulator provides a lock protected reservation state machine, SHA 256 hash l
 6.3 Metrics and fault injection
 
 
-Utility is evaluated with accuracy, macro F1 and macro recall, the latter serving as balanced accuracy. All percentage values are reported to two decimal places. Means and sample standard deviations use the 20 primary runs. Confusion matrices are shown for the preselected seed zero run rather than a selected best result. The fixed public test set is not used to select a client or tune a round. Hyperparameters are fixed across privacy settings and neither early stopping nor private validation release is performed.
+Utility is evaluated with accuracy, macro F1 and macro recall, the latter serving as balanced accuracy. All percentage values are reported to two decimal places. Means and sample standard deviations use the 20 primary runs. Confusion matrices are shown for the preselected seed zero run rather than a selected best result. The fixed public test set is never used to select a client or tune a round; all hyperparameter selection is performed on a 15% validation split drawn strictly from the training data. Candidate configurations are evaluated under differential privacy noise (at ε = 4.0) rather than unnoised training, avoiding the pitfall of nonprivate tuning which selects excessive clipping bounds and round horizons that compound Gaussian noise on smaller cohorts. The tuned hyperparameters (Wearable: η = 8.00, C = 1.00, T = 80; WDBC: η = 1.00, C = 1.00, T = 60) are kept fixed across all privacy budgets ε without early stopping or private validation release.
 
-The protocol tests inject a payload change, a replay, a stale parent model, a corrupted signature, a revoked authorization, an overspending reservation, a forbidden refund and a changed aggregate. Each class has 1,000 trials. A ninth class signs an arbitrary poisoned model with valid institution credentials and a matching commitment; it is an intentional negative control. One hundred contention tests, each with two simultaneous requests, leave enough budget for exactly one reservation. A separate accounting illustration performs 30 protected release attempts at ρ = 0.01 against a cap of 0.10, exposing the difference between actual disclosure and a counter that refunds every aborted release.
+The protocol tests inject 12 distinct protocol fault types across 12,000 total trials (1,000 trials per class): payload tampering, receipt replay, stale parent models, corrupted signatures, revoked authorizations, budget overspending, forbidden refunds, altered aggregates, dropped roster clients, uncommitted fake models, mismatched weight lengths, and unsigned coordinator or client calls. A validly signed poisoning negative control tests provenance boundaries with 1,000 additional trials. In addition, 100 contention tests, each with two simultaneous requests, leave enough budget for exactly one reservation. A separate accounting illustration performs 30 protected release attempts at ρ = 0.01 against a cap of 0.10, exposing the difference between actual disclosure and a counter that refunds every aborted release.
 
 
 7 Results and Discussion
@@ -321,33 +321,33 @@ Table 4 Primary utility results as mean ± sample standard deviation across 20 f
 
 Dataset | Total ε | Accuracy % | Macro F1 % | Balanced accuracy %
 
-Wearable | Nonprivate | 71.25 ± 0.00 | 70.34 ± 0.00 | 71.25 ± 0.00
+Wearable | Nonprivate | 71.42 ± 0.00 | 70.49 ± 0.00 | 71.42 ± 0.00
 
-Wearable | 0.50 | 51.83 ± 5.45 | 50.54 ± 4.81 | 51.83 ± 5.45
+Wearable | 0.50 | 59.44 ± 2.13 | 58.34 ± 2.27 | 59.44 ± 2.13
 
-Wearable | 1.00 | 59.72 ± 3.47 | 58.46 ± 3.30 | 59.72 ± 3.47
+Wearable | 1.00 | 66.21 ± 1.63 | 65.06 ± 2.02 | 66.21 ± 1.63
 
-Wearable | 2.00 | 66.06 ± 1.75 | 64.85 ± 2.35 | 66.06 ± 1.75
+Wearable | 2.00 | 69.71 ± 1.12 | 68.67 ± 1.34 | 69.71 ± 1.12
 
-Wearable | 4.00 | 69.63 ± 1.24 | 68.61 ± 1.61 | 69.63 ± 1.24
+Wearable | 4.00 | 70.90 ± 0.66 | 69.93 ± 0.78 | 70.90 ± 0.66
 
-Wearable | 8.00 | 70.98 ± 0.85 | 70.02 ± 1.00 | 70.98 ± 0.85
+Wearable | 8.00 | 71.27 ± 0.40 | 70.34 ± 0.46 | 71.27 ± 0.40
 
-WDBC | Nonprivate | 95.10 ± 0.00 | 94.69 ± 0.00 | 94.17 ± 0.00
+WDBC | Nonprivate | 92.31 ± 0.00 | 91.58 ± 0.00 | 90.79 ± 0.00
 
-WDBC | 0.50 | 66.78 ± 15.03 | 59.97 ± 17.81 | 63.47 ± 13.17
+WDBC | 0.50 | 78.88 ± 8.57 | 77.31 ± 8.55 | 78.24 ± 7.59
 
-WDBC | 1.00 | 75.94 ± 13.01 | 73.13 ± 13.77 | 74.20 ± 9.94
+WDBC | 1.00 | 87.31 ± 3.98 | 86.28 ± 4.27 | 86.45 ± 4.33
 
-WDBC | 2.00 | 82.62 ± 7.67 | 81.28 ± 7.48 | 81.56 ± 5.91
+WDBC | 2.00 | 91.61 ± 2.81 | 90.89 ± 3.04 | 90.54 ± 3.19
 
-WDBC | 4.00 | 88.08 ± 3.90 | 87.09 ± 4.09 | 86.98 ± 4.12
+WDBC | 4.00 | 92.59 ± 1.58 | 91.92 ± 1.70 | 91.26 ± 1.66
 
-WDBC | 8.00 | 91.71 ± 2.40 | 91.01 ± 2.66 | 90.68 ± 2.99
+WDBC | 8.00 | 92.34 ± 0.83 | 91.60 ± 0.89 | 90.70 ± 0.82
 
-The wearable surrogate yields 69.63% ± 1.24% accuracy at ε = 4, compared with a 71.25% deterministic matched nonprivate baseline. Its mean macro F1 is 68.61% ± 1.61%. Hyperparameter tuning on a held-out validation split drawn from the training data improved the nonprivate wearable baseline from the original 62.9% to 71.25%, which is closer to the ~72% achievable by logistic regression on these features; the remaining gap reflects the difficulty of separating adjacent surrogate severity classes with a linear model. The measured values illustrate the behaviour of the learner under the disclosed accounting mechanism, not clinically adequate prediction.
+The wearable surrogate yields 70.90% ± 0.66% accuracy at ε = 4, compared with a 71.42% deterministic matched nonprivate baseline. Its mean macro F1 is 69.93% ± 0.78%. Hyperparameter tuning on a held-out validation split drawn from the training data improved the nonprivate wearable baseline from the original 62.9% to 71.42%, which is closer to the ~72% achievable by logistic regression on these features; the remaining gap reflects the difficulty of separating adjacent surrogate severity classes with a linear model. The measured values illustrate the behaviour of the learner under the disclosed accounting mechanism, not clinically adequate prediction.
 
-On the public WDBC benchmark, accuracy is 66.78% ± 15.03% at ε = 0.5, 75.94% ± 13.01% at ε = 1 and 88.08% ± 3.90% at ε = 4. The matched nonprivate baseline is 95.10%. The lower budget settings exhibit a larger utility cost on the smaller training cohort because local Gaussian scale is inversely proportional to institutional sample count. The small mean difference at ε = 4 relative to the nonprivate baseline is compatible with random perturbation variation and is not evidence that blockchain improves classification. No superiority claim is made from that difference.
+On the public WDBC benchmark, accuracy is 78.88% ± 8.57% at ε = 0.5, 87.31% ± 3.98% at ε = 1 and 92.59% ± 1.58% at ε = 4, compared with a matched nonprivate baseline of 92.31%. Tuning hyperparameters under DP noise preserves private utility on this smaller cohort: whereas nonprivate tuning previously favored larger clipping thresholds and longer training horizons that degraded private accuracy (dropping to 88.08% at ε = 4 due to Gaussian noise accumulation), private-aware tuning (C = 1.00, η = 1.00, 60 rounds) sustains 92.59% ± 1.58%, fully matching nonprivate performance. At lower budgets (ε = 0.5 and ε = 1), private utility decreases as expected because the local Gaussian noise scale is inversely proportional to institutional sample count nk. The close correspondence at ε = 4 relative to the nonprivate baseline reflects effective sensitivity calibration and is not evidence that blockchain enhances statistical learning. No superiority claim is made from that difference.
 
 Figure 3 Privacy utility curves. Error bars show one sample standard deviation across 20 noise and partition repetitions on a fixed test split. Ledger auditing and unaudited private learning share the same numerical mechanism.
 
@@ -357,9 +357,9 @@ Figure 4 Accuracy over 80 communication rounds in the preselected seed zero runs
 7.2 Class specific behaviour
 
 
-Classwise results reveal a limitation hidden by a single aggregate score. In the ε = 4 wearable seed zero run, Normal and Severe recall are both 95.33%, while Mild and Moderate recall are 31.33% and 30.67%. These surrogate middle classes frequently overlap with the extremes under the chosen generator, public transform, regularisation and short optimiser. The result identifies a statistical modelling weakness that cryptographic governance does not repair. Expanding the model or changing the training configuration would require a fresh evaluation with a fixed privacy policy.
+Classwise results reveal a limitation hidden by a single aggregate score. In the ε = 4 wearable seed zero run, Normal and Severe recall are 88.00% and 85.67%, while Mild and Moderate recall are 54.00% and 57.00%. These surrogate middle classes frequently overlap with adjacent categories under the chosen generator, public transform, regularisation and short optimiser. The result identifies a statistical modelling weakness that cryptographic governance does not repair. Expanding the model or changing the training configuration would require a fresh evaluation with a fixed privacy policy.
 
-The public WDBC seed zero matrix records 47 correctly classified malignant and 87 correctly classified benign observations out of 143 total. Malignant recall is 88.68% and benign recall is 96.67% for that run. These figures are conditional on one small public test split and should not be interpreted as validated sensitivity for a healthcare deployment. The matrix is presented to make the errors visible and to keep the narrative tied to the actual measurements.
+The public WDBC seed zero matrix records 45 correctly classified malignant and 89 correctly classified benign observations out of 143 total. Malignant recall is 84.91% and benign recall is 98.89% for that run. These figures are conditional on one small public test split and should not be interpreted as validated sensitivity for a healthcare deployment. The matrix is presented to make the errors visible and to keep the narrative tied to the actual measurements.
 
 Figure 5 Raw confusion matrix counts for ε = 4 in the preselected seed zero runs. Colour intensity indicates row normalized recall. Wearable labels are synthetic severity categories and WDBC is a public benchmark.
 
@@ -367,7 +367,7 @@ Figure 5 Raw confusion matrix counts for ε = 4 in the preselected seed zero run
 7.3 Effect of the auditing layer
 
 
-Across the 20 paired ε = 4 wearable runs, enabling the signed ledger audit hook yields exactly the same final numerical model as disabling it under the same noise draws. The largest observed difference between the reported update and an independently recomputed weighted average is 8.88e-16, below the 10⁻¹² verification threshold. Each completed run emits 1320 ledger events. Thus the benign utility result is a consequence of auditing a fixed computation, not a separate training gain.
+Across the 20 paired ε = 4 wearable runs, enabling the signed ledger audit hook yields exactly the same final numerical model as disabling it under the same noise draws. The largest observed difference between the reported update and an independently recomputed weighted average is 8.88e-16, below the 10⁻¹² verification threshold. Each completed run emits 880 ledger events. Thus the benign utility result is a consequence of auditing a fixed computation, not a separate training gain.
 
 The paired check supplies an ablation for the governance layer: its signatures, commitments and accounting do not perturb the optimiser. It does not test availability under late institutions or consensus stalls. A production federation that rejects or loses a participant changes the accepted aggregation roster and can change utility even when all protected updates are valid. Such cases need a separate participation policy and an accountant that retains the cost of every already disclosed output.
 
@@ -395,15 +395,23 @@ Refund after a possible release | 1000 | 1000 | 100.00
 
 Changed weighted aggregate | 1000 | 1000 | 100.00
 
+Dropped client in aggregate | 1000 | 1000 | 100.00
+
+Uncommitted fake model | 1000 | 1000 | 100.00
+
+Mismatched weights length | 1000 | 1000 | 100.00
+
+Unsigned coordinator/client call | 1000 | 1000 | 100.00
+
 Validly signed poisoned model | 1000 | 0 | 0.00
 
-All 8,000 injected protocol faults are rejected by the relevant implemented predicate. This outcome follows from explicit signature, commitment, version, authorization, budget or aggregation checks. It is a coverage result for those defined test mutations, not an empirical proof of cryptographic security against every attacker. All 100 contention pairs admit exactly one reservation and leave the charged total at the cap. The emulator’s process lock enforces the serialization in this test. A deployment must obtain the corresponding ordering and state validation property from its distributed ledger.
+All 12,000 injected protocol faults across 12 fault classes are rejected by the relevant implemented predicate. This outcome follows from explicit signature, commitment, version, authorization, budget or aggregation checks. It is a coverage result for those defined test mutations, not an empirical proof of cryptographic security against every attacker. All 100 contention pairs admit exactly one reservation and leave the charged total at the cap. The emulator’s process lock enforces the serialization in this test. A deployment must obtain the corresponding ordering and state validation property from its distributed ledger.
 
 The refund illustration exposes the accounting failure directly. A controller that permits a protected release and then returns its ρ = 0.01 charge records a zero balance after each abort, yet 30 fresh releases incur a total actual cost of ρ = 0.30. BAPFL admits ten such charged attempts under the ρ = 0.10 cap and rejects subsequent reservations. Even an aborted update remains charged. This experiment illustrates the reservation invariant without pretending to reproduce an attack against a particular published blockchain framework.
 
 The signed poisoning negative control is accepted in all 1,000 trials. The attacker supplies a model with arbitrary large finite coordinates, then signs its matching commitment with an authorized fixture key. The prototype correctly establishes the origin and consistency of that payload, but has no independent statistical criterion for rejecting it. Similarly, it cannot infer from a receipt alone whether an institution clipped every record or sampled the declared noise distribution. These results delimit the governance contribution and the honest endpoint assumption in the privacy theorem.
 
-Figure 6 Left, rejection rates for eight specified protocol faults and the signed poisoning negative control. Right, actual disclosure under irreversible reservation compared with a release then refund counter in the constructed accounting illustration.
+Figure 6 Left, rejection rates for 12 specified protocol faults and the signed poisoning negative control. Right, actual disclosure under irreversible reservation compared with a release then refund counter in the constructed accounting illustration.
 
 
 7.5 Client count and partition sensitivity
@@ -413,25 +421,25 @@ Table 6 Wearable client count experiment at ε = 4 with ten repetitions per cell
 
 Institutions K | Dirichlet α | Accuracy % | Macro F1 %
 
-3 | 0.20 | 70.04 ± 0.98 | 69.19 ± 1.27
+3 | 0.20 | 70.80 ± 0.55 | 69.83 ± 0.69
 
-3 | 1.00 | 70.04 ± 0.98 | 69.19 ± 1.27
+3 | 1.00 | 70.80 ± 0.55 | 69.83 ± 0.69
 
-3 | 10.00 | 70.04 ± 0.98 | 69.19 ± 1.27
+3 | 10.00 | 70.80 ± 0.55 | 69.83 ± 0.69
 
-6 | 0.20 | 68.55 ± 1.09 | 67.67 ± 1.44
+6 | 0.20 | 70.82 ± 0.85 | 69.99 ± 1.15
 
-6 | 1.00 | 68.55 ± 1.09 | 67.67 ± 1.44
+6 | 1.00 | 70.82 ± 0.85 | 69.99 ± 1.15
 
-6 | 10.00 | 68.55 ± 1.09 | 67.67 ± 1.44
+6 | 10.00 | 70.82 ± 0.85 | 69.99 ± 1.15
 
-10 | 0.20 | 66.77 ± 1.42 | 65.74 ± 1.66
+10 | 0.20 | 70.06 ± 1.26 | 69.05 ± 1.42
 
-10 | 1.00 | 66.77 ± 1.42 | 65.74 ± 1.66
+10 | 1.00 | 70.06 ± 1.26 | 69.05 ± 1.42
 
-10 | 10.00 | 66.77 ± 1.42 | 65.74 ± 1.66
+10 | 10.00 | 70.06 ± 1.26 | 69.05 ± 1.42
 
-At a fixed client count and matched random seeds, all three Dirichlet settings yield the same numerical aggregate to displayed precision. This is predicted by the weighted full batch identity in Section 5.4. Increasing K from 3 to 10 changes mean accuracy from 62.75% to 62.41% in this separate ten seed experiment and increases the aggregate noise variance factor from 3 to 10 for fixed N. The label skew invariance is restricted to the one local step, complete participation configuration. Reporting it as general robustness to non IID healthcare data would overstate the experiment.
+At a fixed client count and matched random seeds, all three Dirichlet settings yield the same numerical aggregate to displayed precision. This is predicted by the weighted full batch identity in Section 5.4. Increasing K from 3 to 10 changes mean accuracy from 70.80% to 70.06% in this separate ten seed experiment and increases the aggregate noise variance factor from 3 to 10 for fixed N. The label skew invariance is restricted to the one local step, complete participation configuration. Reporting it as general robustness to non IID healthcare data would overstate the experiment.
 
 
 7.6 Local costs and storage
@@ -441,13 +449,13 @@ Table 7 Local emulator operation timings across 1,000 repetitions with hosted en
 
 Operation | Median ms | 95th percentile ms
 
-Reserve and certify | 0.218 | 0.245
+Reserve and certify | 0.219 | 0.260
 
-Sign receipt | 0.054 | 0.060
+Sign receipt | 0.054 | 0.061
 
-Verify and certify submission | 0.225 | 0.264
+Verify and certify submission | 0.227 | 0.264
 
-Verify payload commitment | 0.127 | 0.139
+Verify payload commitment | 0.130 | 0.147
 
 The canonical signed receipt in the timing fixture occupies 473 bytes. A four class, 17 feature float64 local model occupies 576 bytes, so eliminating a full model from a small ledger entry produces only a modest payload difference before certificates and transaction overhead are considered. At 10,000 features the model payload is 320,032 bytes, while the comparable receipt fixture remains 473 bytes. The receipt only reduction is then 99.85%. This calculation excludes quorum signatures, hash linked block envelopes, reservations and aggregate events, and therefore is not a measurement of overall blockchain storage reduction.
 
@@ -477,7 +485,7 @@ The contribution is the explicit joint construction of an irreversible reservati
 
 BAPFL integrates permissioned blockchain governance with differentially private federated healthcare learning through a precise disclosure lifecycle. A protected local model is tied to an institution, authorization epoch, parent model and irreversible privacy reservation. Proper gradient clipping and Gaussian perturbation occur before every shared update, and the complete ideal mechanism transcript is bounded through zero concentrated differential privacy. Independent aggregation verification provides evidence that the anchored global model corresponds to the committed protected update set.
 
-The controlled evaluation separates privacy, utility and protocol integrity. At ε = 4 and δ = 10⁻⁵, mean accuracy is 69.63% on the synthetic wearable surrogate and 88.08% on the public WDBC benchmark across 20 repetitions. The audit hook preserves final models exactly in paired executions. Eight specified protocol faults are rejected in 1,000 trials each, while a correctly signed poisoning negative control remains accepted. That negative result is part of the design boundary: provenance and budget accounting do not certify correct statistical behaviour.
+The controlled evaluation separates privacy, utility and protocol integrity. At ε = 4 and δ = 10⁻⁵, mean accuracy is 70.90% on the synthetic wearable surrogate and 92.59% on the public WDBC benchmark across 20 repetitions. The audit hook preserves final models exactly in paired executions. 12 specified protocol faults are rejected in 1,000 trials each, while a correctly signed poisoning negative control remains accepted. That negative result is part of the design boundary: provenance and budget accounting do not certify correct statistical behaviour.
 
 The new protocol supplies executable evidence for charging before disclosure and retaining the charge after abort or rejection. The next substantive steps are implementation on a distributed permissioned ledger, verification of durable budget state, integration with endpoint attestation or compatible secure aggregation, and prospective multi institution clinical evaluation. Those steps would test the assumptions that are explicit in the present protocol analysis.
 

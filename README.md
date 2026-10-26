@@ -9,11 +9,11 @@ complete measured outputs. It is a research prototype, not clinical software.
 - 240 primary utility runs: two datasets, six settings, twenty random seeds.
 - 90 additional client-count and Dirichlet-allocation sensitivity runs.
 - Twenty paired audited and unaudited runs, with identical final models.
-- One thousand trials for each of eight defined protocol fault types.
+- One thousand trials for each of twelve defined protocol fault types.
 - A signed-poisoning negative control that is accepted, demonstrating the limit
   of provenance checks rather than disguising it as a successful defence.
 - One hundred pairs of concurrent reservations, each with a single winner.
-- A signed, hash-linked example trace with 560 governance events.
+- A signed, hash-linked example trace with 880 governance events.
 
 The wearable surrogate is wholly synthetic. No patient records from the source
 manuscript are included, reused or reconstructed. WDBC is the public Wisconsin

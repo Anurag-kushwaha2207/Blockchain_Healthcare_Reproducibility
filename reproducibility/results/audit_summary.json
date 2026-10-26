@@ -6,20 +6,20 @@
   "configured_rho_cap": 0.1,
   "local_timings": {
     "reserve": {
-      "median_ms": 0.2151,
-      "p95_ms": 0.306515
+      "median_ms": 0.219,
+      "p95_ms": 0.259605
     },
     "sign_receipt": {
-      "median_ms": 0.0532,
-      "p95_ms": 0.07771
+      "median_ms": 0.0542,
+      "p95_ms": 0.0609
     },
     "submit_verify": {
-      "median_ms": 0.223,
-      "p95_ms": 0.31512999999999997
+      "median_ms": 0.2271,
+      "p95_ms": 0.2636449999999999
     },
     "payload_verify": {
-      "median_ms": 0.1272,
-      "p95_ms": 0.18691
+      "median_ms": 0.1301,
+      "p95_ms": 0.14697499999999994
     }
   },
   "median_receipt_bytes": 473,
