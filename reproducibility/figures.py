@@ -97,25 +97,15 @@ def _build_right_panel_from_ledger():
         irrev_ledger.reserve('A', attempt, parent, cost_units, client_sig=rsig)
         irrev_cumulative.append(irrev_ledger.spent['A'] / SCALE_RHO)
 
-    # --- Release-then-refund illustration (naive, wrong behaviour) ---
-    refund_ledger = Ledger(budget_units=budget, clients=('A',),
-                           expected_cost=cost_units)
+    # --- Counterfactual release-then-refund curves (Fix 7) ---
+    # Built mathematically without mutating ledger.spent; labeled explicitly as an illustration.
     refund_cumulative = []
     refund_recorded   = []
     actual_exposure   = 0.0
     for attempt in range(30):
-        parent = ('b'*62 + f'{attempt:02d}')
-        roster = ['A']; counts = {'A': 100}
-        csig   = _make_coordinator_sig(attempt, parent, roster, counts)
-        rsig   = _make_client_sig('A', attempt, parent, cost_units)
-        refund_ledger.open_round(attempt, parent, roster, counts, coordinator_sig=csig)
-        result = refund_ledger.reserve('A', attempt, parent, cost_units, client_sig=rsig)
-        if result is not None:
-            actual_exposure += cost_rho       # a release actually occurred
-            # simulate the wrong "refund" by decrementing spent manually
-            refund_ledger.spent['A'] = max(0, refund_ledger.spent['A'] - cost_units)
+        actual_exposure += cost_rho
         refund_cumulative.append(actual_exposure)
-        refund_recorded.append(refund_ledger.spent['A'] / SCALE_RHO)
+        refund_recorded.append(0.0)  # naive refund records zero on ledger
 
     return (np.arange(1, 31), irrev_cumulative,
             refund_cumulative, refund_recorded, cap_rho)
@@ -158,25 +148,41 @@ def result_figures():
     fig.tight_layout(w_pad=2);save(fig,'figure5_confusion')
 
     attacks=pd.read_csv(DATA/'audit_attacks.csv')
-    fig,axes=plt.subplots(1,2,figsize=(7.2,4))
-    names=['Payload change','Replay','Stale parent','Forged signature','Revocation','Overspend','Refund attempt','Altered aggregate','Signed poisoning']
-    axes[0].barh(np.arange(len(names)),attacks.rejection_rate*100,color=[TEAL]*8+[RED])
-    axes[0].set_yticks(np.arange(len(names)),names,fontsize=8);axes[0].invert_yaxis()
+    attack_labels = {
+        'payload_tamper': 'Payload change',
+        'receipt_replay': 'Replay',
+        'stale_model': 'Stale parent',
+        'forged_signature': 'Forged signature',
+        'revoked_consent': 'Revocation',
+        'budget_overspend': 'Overspend',
+        'refund_laundering': 'Refund attempt',
+        'aggregate_tamper': 'Altered aggregate',
+        'dropped_clients': 'Dropped client in agg',
+        'fake_models': 'Fake model in agg',
+        'wrong_length_weights': 'Wrong weights len',
+        'unsigned_calls': 'Unsigned calls',
+        'signed_poisoned_update': 'Signed poisoning',
+    }
+    names = [attack_labels.get(a, a) for a in attacks.attack]
+    fig,axes=plt.subplots(1,2,figsize=(7.6,4.5))
+    colors = [RED if a=='signed_poisoned_update' else TEAL for a in attacks.attack]
+    axes[0].barh(np.arange(len(names)),attacks.rejection_rate*100,color=colors)
+    axes[0].set_yticks(np.arange(len(names)),names,fontsize=7.2);axes[0].invert_yaxis()
     axes[0].set(xlabel='Rejection rate',xlim=(0,112),title='Executable protocol fault tests')
     axes[0].set_xticks([0,50,100])
     axes[0].xaxis.set_major_formatter(fmt)
-    for i,x in enumerate(attacks.rejection_rate*100):axes[0].text(x+2,i,f'{x:.2f}%',va='center',fontsize=7.8)
+    for i,x in enumerate(attacks.rejection_rate*100):axes[0].text(x+2,i,f'{x:.2f}%',va='center',fontsize=6.8)
 
-    # Fix 6: right panel from real Ledger runs
+    # Fix 7: right panel with verified ledger runs & explicitly labeled illustration
     attempts, irrev, refund_actual, refund_recorded, cap_rho = _build_right_panel_from_ledger()
-    axes[1].plot(attempts, irrev,           color=TEAL,  lw=2, label='Irreversible reservation (BAPFL)')
-    axes[1].plot(attempts, refund_actual,   color=RED,   lw=2, label='Release then refund (actual exposure)')
-    axes[1].plot(attempts, refund_recorded, color=NAVY,  lw=1.4, ls=':', label='Refunded ledger counter')
+    axes[1].plot(attempts, irrev,           color=TEAL,  lw=2, label='Irreversible reservation (BAPFL, verified)')
+    axes[1].plot(attempts, refund_actual,   color=RED,   lw=2, label='Release then refund (actual exposure, illustration)')
+    axes[1].plot(attempts, refund_recorded, color=NAVY,  lw=1.4, ls=':', label='Refunded ledger counter (illustration)')
     axes[1].axhline(cap_rho, color='#777777', ls='--', label=f'Configured ρ cap ({cap_rho})')
     axes[1].set(xlabel='Release attempt',
                 ylabel='Actual or recorded cumulative ρ',
-                title='Refund attack on privacy accounting\n(from real Ledger runs)')
-    axes[1].legend(fontsize=7, loc='upper left'); axes[1].set_ylim(-.015, .325)
+                title='Refund attack on privacy accounting\n(Illustration of naive release-then-refund)')
+    axes[1].legend(fontsize=6.5, loc='upper left'); axes[1].set_ylim(-.015, .325)
     fig.tight_layout(w_pad=1.8);save(fig,'figure6_audit_budget')
 
     fig,axes=plt.subplots(1,2,figsize=(7.2,3.35))

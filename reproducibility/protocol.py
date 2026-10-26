@@ -462,6 +462,7 @@ def attack_trials(n=1000):
     rows=[]
     attacks=['payload_tamper','receipt_replay','stale_model','forged_signature',
              'revoked_consent','budget_overspend','refund_laundering','aggregate_tamper',
+             'dropped_clients','fake_models','wrong_length_weights',
              'unsigned_calls','signed_poisoned_update']
     rng=np.random.default_rng(440)
 
@@ -518,6 +519,43 @@ def attack_trials(n=1000):
                 changed=expected.copy();changed.flat[rng.integers(changed.size)]+=.1
                 reject=not verify_aggregate([a1,a2,a3],w,changed)[0]
                 assert reject, "aggregate_tamper was not rejected"
+            elif attack=='dropped_clients':
+                # Open round with roster ['A', 'B'] but only client 'A' accepted
+                p_drop = 'd'*64
+                roster_drop = ['A', 'B']
+                counts_drop = {'A': 50, 'B': 50}
+                csig_d = _make_coordinator_sig(3, p_drop, roster_drop, counts_drop)
+                l.open_round(3, p_drop, roster_drop, counts_drop, coordinator_sig=csig_d)
+                rsig_a = _make_client_sig('A', 3, p_drop, 10_000_000_000)
+                l.reserve('A', 3, p_drop, 10_000_000_000, client_sig=rsig_a)
+                rec_a = l.receipt('A', 3, a)
+                assert l.submit(rec_a) and l.receive(rec_a, a)
+                # Client 'B' dropped; attempt to aggregate round 3 must fail
+                try:
+                    l.anchor_aggregate(3, [a, a], a, weights=[0.5, 0.5])
+                    reject = False
+                except ValueError:
+                    reject = True
+                assert reject, "anchor_aggregate should reject dropped client"
+            elif attack=='fake_models':
+                # Client 'A' accepted model 'a', coordinator presents fake model 'a+1'
+                assert l.submit(r) and l.receive(r, a)
+                a_fake = a + 1.0
+                try:
+                    l.anchor_aggregate(0, [a_fake], a_fake, weights=[1.0])
+                    reject = False
+                except ValueError:
+                    reject = True
+                assert reject, "anchor_aggregate should reject model_hash mismatch"
+            elif attack=='wrong_length_weights':
+                # Roster length is 1, caller supplies weights of length 2
+                assert l.submit(r) and l.receive(r, a)
+                try:
+                    l.anchor_aggregate(0, [a], a, weights=[0.5, 0.5])
+                    reject = False
+                except ValueError:
+                    reject = True
+                assert reject, "anchor_aggregate should reject wrong length weights"
             elif attack=='unsigned_calls':
                 # 1. Test unsigned open_round fails
                 unsigned_open_failed = False
@@ -541,21 +579,38 @@ def attack_trials(n=1000):
             rejected+=int(reject)
         rows.append({'attack':attack,'trials':n,'rejected':rejected,'rejection_rate':rejected/n})
 
-    # Fix 6: property test — 'spent' must never decrease
+    # Fix 7: property test — compare spent between consecutive operations
     property_ledger=Ledger(budget_units=50_000_000_000, expected_cost=10_000_000_000)
-    initial_spent = dict(property_ledger.spent)
+    prev_spent = dict(property_ledger.spent)
+    def _assert_monotonic(step_name):
+        for c in property_ledger.spent:
+            assert property_ledger.spent[c] >= prev_spent[c], \
+                f"spent decreased after {step_name} for client {c}: {prev_spent[c]} -> {property_ledger.spent[c]}"
+        prev_spent.update(property_ledger.spent)
+
     for t2 in range(3):
         parent_t = 'a'*62+f'{t2:02d}'
         roster_t=['A']; counts_t={'A':100}
         csig_t=_make_coordinator_sig(t2,parent_t,roster_t,counts_t)
         property_ledger.open_round(t2,parent_t,roster_t,counts_t,coordinator_sig=csig_t)
+        _assert_monotonic('open_round')
+
         rsig_t=_make_client_sig('A',t2,parent_t,10_000_000_000)
         res=property_ledger.reserve('A',t2,parent_t,10_000_000_000,client_sig=rsig_t)
+        _assert_monotonic('reserve')
+
         if res is not None:
-            for c in property_ledger.spent:
-                assert property_ledger.spent[c] >= initial_spent.get(c,0), \
-                    f"spent decreased for client {c}"
-    print("Property test: spent never decreased — OK", flush=True)
+            rec = property_ledger.receipt('A', t2, a)
+            _assert_monotonic('receipt')
+            property_ledger.submit(rec)
+            _assert_monotonic('submit')
+            property_ledger.receive(rec, a)
+            _assert_monotonic('receive')
+            property_ledger.anchor_aggregate(t2, [a], a, weights=[1.0])
+            _assert_monotonic('anchor_aggregate')
+            property_ledger.refund('A', t2)
+            _assert_monotonic('refund')
+    print("Property test: spent monotonically non-decreasing between consecutive operations — OK", flush=True)
 
     # Verify concurrency at a nearly exhausted budget: exactly one wins.
     wins=[]
